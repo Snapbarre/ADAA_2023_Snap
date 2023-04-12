@@ -41,11 +41,18 @@ taille_batch=100
 epoch_nbr=3
 learning_rate=0.001
 
-mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
-mnist_train_images=mnist.train.images.reshape(28,28)/255
-mnist_train_labels=mnist.tran.labels
-mnist_test_images=mnist.test.images.reshape(28,28)/255
-mnist_test_labels=mnist.test.labels
+(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+mnist_train_images=train_images/255
+mnist_train_labels=train_labels
+mnist_test_images=test_images/255
+mnist_test_labels=test_labels
+
+mnist_train_images = mnist_train_images.reshape((*mnist_train_images.shape,1))
+mnist_test_images = mnist_test_images.reshape((*mnist_test_images.shape,1))
+
+with tf.Session() as s:
+  encoded_train_labels = tf.one_hot(mnist_train_labels,10).eval()
+  encoded_test_labels = tf.one_hot(mnist_test_labels,10).eval()
 
 """
 # Si la dataset est sur votre drive
@@ -67,28 +74,27 @@ with tf.Session() as s:
     tab_train=[]
     tab_test=[]
     
-    for id_entrainement in np.arange(epoch_nbr):
-		print("> Entrainement", id_entrainement)
+    for id_entrainement in np.arange(nbr_entrainement):
         tab_accuracy_train=[]
         tab_accuracy_test=[]
+        print("> Entrainement", id_entrainement)
         for batch in np.arange(0, len(mnist_train_images), taille_batch):
             s.run(train, feed_dict={
                 ph_images: mnist_train_images[batch:batch+taille_batch],
-                ph_labels: mnist_train_labels[batch:batch+taille_batch]
+                ph_labels: encoded_train_labels[batch:batch+taille_batch]
             })
         for batch in np.arange(0, len(mnist_train_images), taille_batch):
             precision=s.run(accuracy, feed_dict={
                 ph_images: mnist_train_images[batch:batch+taille_batch],
-                ph_labels: mnist_train_labels[batch:batch+taille_batch]
+                ph_labels: encoded_train_labels[batch:batch+taille_batch]
             })
             tab_accuracy_train.append(precision)
         for batch in np.arange(0, len(mnist_test_images), taille_batch):
             precision=s.run(accuracy, feed_dict={
                 ph_images: mnist_test_images[batch:batch+taille_batch],
-                ph_labels: mnist_test_labels[batch:batch+taille_batch]
+                ph_labels: encoded_test_labels[batch:batch+taille_batch]
             })
             tab_accuracy_test.append(precision)
-
         print("  train:", np.mean(tab_accuracy_train))
         tab_train.append(1-np.mean(tab_accuracy_train))
         print("  test :", np.mean(tab_accuracy_test))
