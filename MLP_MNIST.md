@@ -11,48 +11,23 @@ import cv2
 ```
 ## Chargement du dataset
 
-Trois possibilités s'offrent à vous pour charger la dataset MNIST.
-* Télécharger les dataset sur le site de Yann Le Cun (http://yann.lecun.com/exdb/mnist/)
-que vous décompresserez et que vous placerez sur votre google drive dans un dossier dataset. Ensuite vous n'aurez qu'à les charger dans votre environnement avec les lignes suivantes :
+Il existe plusieurs possibilités de télécharger le datasets mnist, mais vous pouvez les récupérer de façon assez simple à partir des datasets exemples de google:
 
 ```
-mnist_train_images=np.fromfile("dataset/mnist/train-images.idx3-ubyte", dtype=np.uint8)[16:].reshape(-1, 784)/255
-mnist_train_labels=np.eye(10)[np.fromfile("dataset/mnist/train-labels.idx1-ubyte", dtype=np.uint8)[8:]]
-mnist_test_images=np.fromfile("dataset/mnist/t10k-images.idx3-ubyte", dtype=np.uint8)[16:].reshape(-1, 784)/255
-mnist_test_labels=np.eye(10)[np.fromfile("dataset/mnist/t10k-labels.idx1-ubyte", dtype=np.uint8)[8:]]
-```
-
-```len(mnist_train_images)``` vous indique le nombre d'image de la dataset train (dataset d'apprentissage)
-
-* à partir des serveurs de Google avec les lignes suivantes.
-
-```
-from tensorflow.examples.tutorials.mnist import input_data
-mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
-mnist_train_images=mnist.train.images/255
-mnist_train_labels=mnist.tran.labels
-mnist_test_images=mnist.test.images/255
-mnist_test_labels=mnist.test.labels
-```
-Troisième solution : 
-
-```
-import tensorflow as tf
 (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+mnist_train_images=train_images/255
+mnist_train_labels=train_labels
+mnist_test_images=test_images/255
+mnist_test_labels=test_labels
 ```
 
-La division par 255 permet d'avoir des valeurs d'entrée de réseau comprise entre 0 et 1.
-
-```len(mnist.train.images)``` vous indique le nombre d'image de la dataset train (dataset d'apprentissage).
-
-Dans ce dernier cas de figure, pour afficher les images et les labels de ces datasets vous pouvez utiliser ces lignes de codes :
+Vous pouvez aussi les afficher en éxécutant le code suivant
 
 ```
 taille_batch = 10
-data = mnist.train.next_batch(taille_batch)
 
-images = data[0]
-labels = data[1]
+images = mnist_train_images[:taille_batch,...]
+labels = mnist_train_labels[:taille_batch]
 
 # import matplotlib for visualization
 import numpy as np

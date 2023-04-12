@@ -1,5 +1,7 @@
 # Introduction tensorflow
 
+Pour commencer je recommande d'aller jeter un oeil à la documentation tensorflow : https://www.tensorflow.org/guide/intro_to_graphs?hl=fr#:~:text=TensorFlow%20uses%20graphs%20as%20the,(%22constant%20folding%22).
+
 TensorFlow exploite la notion de graphe pour réaliser des calculs.
 * les noeuds du graphe sont les opérations mathématiques ;
 * les arêtes du gaphe sont les données multi-dimensionnelles entrantes ou sortantes des noeuds (tensors).
