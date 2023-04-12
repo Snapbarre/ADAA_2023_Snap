@@ -147,6 +147,15 @@ Génralement, un biais est ajouté aux résultats de chaque convolution. Ici, le
 
 Pour l'activation Relu, vous utiliserez la méthode ```tf.nn.relu()```. Pour la couche de pooling, vous utiliserez la méthode ```tf.nn.max_pool()```
 
+Vous designerez un block de convolution composé de:
+
+```
+input --> convolution --> relu --> convolution --> relu --> pooling --> result
+```
+
+en utilisant ```tf.nn.max_pool``` pour la couche de pooling
+Vous designerez ensuite un encodeur de deux blocks de convolutions succesifs
+
 ### Etape 3
 
 Mettre en place l'applatissement de la dernière couche de convolution (avec la méthode tf.contrib.layers.flatten)
