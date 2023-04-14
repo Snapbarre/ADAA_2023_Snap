@@ -1,8 +1,5 @@
 # Votre premier réseau convolutionnel
 
-Remarque : rendre un rapport dans lequel vous indiquerez la réponse aux éventuelles questions posées et les analyses qui permettront de reproduire facilement ces scripts en les adaptant à d'autres contextes.
-
-Rapport à envoyer par email : sebastien.ambellouis@univ-eiffel.fr
 
 
 # Convolutional Neural Network for handwritten digits recognition
