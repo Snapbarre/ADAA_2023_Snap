@@ -117,7 +117,7 @@ with tf.Session() as s:
             # lancement de l'apprentissage en passant la commande "train". feed_dict est l'option désignant ce qui est
             # placé dans les placeholders
             s.run(train, feed_dict={
-                ph_images: mnist_train_images[batch:batch+taille_batch],
+                ph_images: mnist_train_images[batch:batch+taille_batch].reshape(taille_batch,-1),
                 ph_labels: mnist_train_labels[batch:batch+taille_batch]
             })
 
@@ -127,7 +127,7 @@ with tf.Session() as s:
             # lancement de la prédiction en passant la commande "accuracy". feed_dict est l'option désignant ce qui est
             # placé dans les placeholders
             acc=s.run(accuracy, feed_dict={
-                ph_images: mnist_train_images[batch:batch+taille_batch],
+                ph_images: mnist_train_images[batch:batch+taille_batch].reshape(taille_batch,-1),
                 ph_labels: mnist_train_labels[batch:batch+taille_batch]
             })
             # création le tableau des accuracies
@@ -141,13 +141,13 @@ with tf.Session() as s:
         tab_acc=[]
         for batch in range(0, len(mnist_test_images), taille_batch):
             acc=s.run(accuracy, feed_dict={
-                ph_images: mnist_test_images[batch:batch+taille_batch],
+                ph_images: mnist_test_images[batch:batch+taille_batch].reshape(taille_batch,-1),
                 ph_labels: mnist_test_labels[batch:batch+taille_batch]
             })
             tab_acc.append(acc)
         print("accuracy test :", np.mean(tab_acc))
         tab_acc_test.append(1-np.mean(tab_acc))   
-        resulat=s.run(scso, feed_dict={ph_images: mnist_test_images[0:taille_batch]})
+        resulat=s.run(scso, feed_dict={ph_images: mnist_test_images[0:taille_batch].reshape(taille_batch,-1)})
    ```
 La dernière ligne de cette session applique de modèle ainsi obtenu sur un batch d'images de test. le résultat sera ensuite affiché (courbe et décision).
    
