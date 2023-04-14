@@ -19,6 +19,10 @@ mnist_train_images=train_images/255
 mnist_train_labels=train_labels
 mnist_test_images=test_images/255
 mnist_test_labels=test_labels
+
+with tf.Session() as s:
+  encoded_train_labels = tf.one_hot(mnist_train_labels,10).eval()
+  encoded_test_labels = tf.one_hot(mnist_test_labels,10).eval()
 ```
 
 Vous pouvez aussi les afficher en éxécutant le code suivant
