@@ -41,11 +41,18 @@ taille_batch=100
 epoch_nbr=3
 learning_rate=0.001
 
-mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
-mnist_train_images=mnist.train.images.reshape(28,28)/255
-mnist_train_labels=mnist.tran.labels
-mnist_test_images=mnist.test.images.reshape(28,28)/255
-mnist_test_labels=mnist.test.labels
+(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+mnist_train_images=train_images/255
+mnist_train_labels=train_labels
+mnist_test_images=test_images/255
+mnist_test_labels=test_labels
+
+mnist_train_images = mnist_train_images.reshape((*mnist_train_images.shape,1))
+mnist_test_images = mnist_test_images.reshape((*mnist_test_images.shape,1))
+
+with tf.Session() as s:
+  encoded_train_labels = tf.one_hot(mnist_train_labels,10).eval()
+  encoded_test_labels = tf.one_hot(mnist_test_labels,10).eval()
 
 """
 # Si la dataset est sur votre drive
@@ -67,28 +74,27 @@ with tf.Session() as s:
     tab_train=[]
     tab_test=[]
     
-    for id_entrainement in np.arange(epoch_nbr):
-		print("> Entrainement", id_entrainement)
+    for id_entrainement in np.arange(nbr_entrainement):
         tab_accuracy_train=[]
         tab_accuracy_test=[]
+        print("> Entrainement", id_entrainement)
         for batch in np.arange(0, len(mnist_train_images), taille_batch):
             s.run(train, feed_dict={
                 ph_images: mnist_train_images[batch:batch+taille_batch],
-                ph_labels: mnist_train_labels[batch:batch+taille_batch]
+                ph_labels: encoded_train_labels[batch:batch+taille_batch]
             })
         for batch in np.arange(0, len(mnist_train_images), taille_batch):
             precision=s.run(accuracy, feed_dict={
                 ph_images: mnist_train_images[batch:batch+taille_batch],
-                ph_labels: mnist_train_labels[batch:batch+taille_batch]
+                ph_labels: encoded_train_labels[batch:batch+taille_batch]
             })
             tab_accuracy_train.append(precision)
         for batch in np.arange(0, len(mnist_test_images), taille_batch):
             precision=s.run(accuracy, feed_dict={
                 ph_images: mnist_test_images[batch:batch+taille_batch],
-                ph_labels: mnist_test_labels[batch:batch+taille_batch]
+                ph_labels: encoded_test_labels[batch:batch+taille_batch]
             })
             tab_accuracy_test.append(precision)
-
         print("  train:", np.mean(tab_accuracy_train))
         tab_train.append(1-np.mean(tab_accuracy_train))
         print("  test :", np.mean(tab_accuracy_test))
@@ -141,6 +147,15 @@ Génralement, un biais est ajouté aux résultats de chaque convolution. Ici, le
 
 Pour l'activation Relu, vous utiliserez la méthode ```tf.nn.relu()```. Pour la couche de pooling, vous utiliserez la méthode ```tf.nn.max_pool()```
 
+Vous designerez un block de convolution composé de:
+
+```
+input --> convolution --> relu --> convolution --> relu --> pooling --> result
+```
+
+en utilisant ```tf.nn.max_pool``` pour la couche de pooling
+Vous designerez ensuite un encodeur de deux blocks de convolutions succesifs
+
 ### Etape 3
 
 Mettre en place l'applatissement de la dernière couche de convolution (avec la méthode tf.contrib.layers.flatten)
@@ -191,136 +206,7 @@ Lancer l'apprentissage et le test du réseau ainsi modifié.
 > Question 5 : Que remarquez vous ?
 
 
-### Etape 6bis
 
-Voici le code final. Dans ce code se trouve le deux lignes permettant de sauvegarder le réseau. Dans colab, le réseau est sauvegarder au travers de 4 fichiers dans le dossier ```/content```
-
-```
-import tensorflow.compat.v1 as tf 
-tf.disable_v2_behavior()
-import numpy as np
-import matplotlib.pyplot as plot
-#import cv2
-import sys
-from google.colab.patches import cv2_imshow
-
-from google.colab import drive
-drive.mount('/content/drive', force_remount=True)
-
-def normalisation(couche_prec):
-    mean, var=tf.nn.moments(couche_prec, [0])
-    scale=tf.Variable(tf.ones(shape=(np.shape(couche_prec)[-1])))
-    beta=tf.Variable(tf.zeros(shape=(np.shape(couche_prec)[-1])))
-    result=tf.nn.batch_normalization(couche_prec, mean, var, beta, scale, 0.001)
-    return result
-
-
-def convolution(couche_prec, taille_noyau, nbr_noyau):
-    w=tf.Variable(tf.random.truncated_normal(shape=(taille_noyau, taille_noyau, int(couche_prec.get_shape()[-1]), nbr_noyau)))
-    b=np.zeros(nbr_noyau)
-    result=tf.nn.conv2d(couche_prec, w, strides=[1, 1, 1, 1], padding='SAME')+b
-    return result
-        
-def fc(couche_prec, nbr_neurone):
-    w=tf.Variable(tf.random.truncated_normal(shape=(int(couche_prec.get_shape()[-1]), nbr_neurone), dtype=tf.float32))
-    b=tf.Variable(np.zeros(shape=(nbr_neurone)), dtype=tf.float32)
-    result=tf.matmul(couche_prec, w)+b
-    return result
-
-taille_batch=100
-nbr_entrainement=10
-learning_rate=0.001
-
-mnist_train_images=np.fromfile("/content/drive/My Drive/Colab Notebooks/dataset/mnist/train-images.idx3-ubyte", dtype=np.uint8)[16:].reshape(-1, 28, 28, 1)/255
-mnist_train_labels=np.eye(10)[np.fromfile("/content/drive/My Drive/Colab Notebooks/dataset/mnist/train-labels.idx1-ubyte", dtype=np.uint8)[8:]]
-mnist_test_images=np.fromfile("/content/drive/My Drive/Colab Notebooks/dataset/mnist/t10k-images.idx3-ubyte", dtype=np.uint8)[16:].reshape(-1, 28, 28, 1)/255
-mnist_test_labels=np.eye(10)[np.fromfile("/content/drive/My Drive/Colab Notebooks/dataset/mnist/t10k-labels.idx1-ubyte", dtype=np.uint8)[8:]]    
-
-ph_images=tf.placeholder(shape=(None, 28, 28, 1), dtype=tf.float32, name='images')
-ph_labels=tf.placeholder(shape=(None, 10), dtype=tf.float32)
-
-result=convolution(ph_images, 5, 16)
-result=normalisation(result)
-result=tf.nn.relu(result)
-result=convolution(result, 5, 16)
-result=normalisation(result)
-result=tf.nn.relu(result)
-result=tf.nn.max_pool(result, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-
-result=convolution(result, 5, 32)
-result=normalisation(result)
-result=tf.nn.relu(result)
-result=convolution(result, 5, 32)
-result=normalisation(result)
-result=tf.nn.relu(result)
-result=tf.nn.max_pool(result, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-
-result=tf.contrib.layers.flatten(result)
-
-result=fc(result, 512)
-result=normalisation(result)
-result=tf.nn.sigmoid(result)
-result=fc(result, 10)
-scso=tf.nn.softmax(result,name='sortie')
-
-loss=tf.nn.softmax_cross_entropy_with_logits_v2(labels=ph_labels, logits=result)
-train=tf.train.AdamOptimizer(learning_rate).minimize(loss)
-#train=tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
-
-accuracy=tf.reduce_mean(tf.cast(tf.equal(tf.argmax(scso, 1), tf.argmax(ph_labels, 1)), tf.float32))
-
-# Instanciation de la classe sauvegarde
-saver=tf.train.Saver()
-
-with tf.Session() as s:
-    s.run(tf.global_variables_initializer())
-    tab_train=[]
-    tab_test=[]
-    for id_entrainement in np.arange(nbr_entrainement):
-        tab_accuracy_train=[]
-        tab_accuracy_test=[]
-        print("> Entrainement", id_entrainement)
-        for batch in np.arange(0, len(mnist_train_images), taille_batch):
-            s.run(train, feed_dict={
-                ph_images: mnist_train_images[batch:batch+taille_batch],
-                ph_labels: mnist_train_labels[batch:batch+taille_batch]
-            })
-        for batch in np.arange(0, len(mnist_train_images), taille_batch):
-            precision=s.run(accuracy, feed_dict={
-                ph_images: mnist_train_images[batch:batch+taille_batch],
-                ph_labels: mnist_train_labels[batch:batch+taille_batch]
-            })
-            tab_accuracy_train.append(precision)
-        for batch in np.arange(0, len(mnist_test_images), taille_batch):
-            precision=s.run(accuracy, feed_dict={
-                ph_images: mnist_test_images[batch:batch+taille_batch],
-                ph_labels: mnist_test_labels[batch:batch+taille_batch]
-            })
-            tab_accuracy_test.append(precision)
-        print("  train:", np.mean(tab_accuracy_train))
-        tab_train.append(1-np.mean(tab_accuracy_train))
-        print("  test :", np.mean(tab_accuracy_test))
-        tab_test.append(1-np.mean(tab_accuracy_test))
-	
-	# sauvegarde du réseau
-        saver.save(s,"model_mnist")
-
-    plot.ylim(0, 1)
-    plot.grid()
-    plot.plot(tab_train, label="Train error")
-    plot.plot(tab_test, label="Test error")
-    plot.legend(loc="upper right")
-    plot.show()
-    resulat=s.run(scso, feed_dict={ph_images: mnist_test_images[0:taille_batch]})
-    np.set_printoptions(formatter={'float': '{:0.3f}'.format})
-    for image in range(taille_batch):
-        print("image", image)
-        print("sortie du réseau:", resulat[image], np.argmax(resulat[image]))
-        print("sortie attendue :", mnist_test_labels[image], np.argmax(mnist_test_labels[image]))
-        cv2_imshow(mnist_test_images[image]*255)
-        #cv2.waitKey()&0xFF==ord('q'):
-        #    break
-```
 
 ### Etape 7
 
